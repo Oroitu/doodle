@@ -10,6 +10,11 @@ import { soundManager } from './utils/SoundManager';
 const GAME_WIDTH = 1000;
 const GAME_HEIGHT = 800;
 
+const getViewportSize = () => ({
+  width: window.visualViewport?.width ?? window.innerWidth,
+  height: window.visualViewport?.height ?? window.innerHeight
+});
+
 // --- Sub-components for UI Overlays ---
 
 const IntroOverlay: React.FC<{ onStart: () => void }> = ({ onStart }) => (
@@ -443,6 +448,7 @@ const App: React.FC = () => {
     e.preventDefault();
 
     const containerRect = containerRef.current.getBoundingClientRect();
+    const viewport = getViewportSize();
 
     // Use explicit math for scaling to ensure 1:1 tracking
     const scaleX = 1 / scale;
@@ -472,9 +478,9 @@ const App: React.FC = () => {
     // Calculate visible screen bounds in Game Space dynamically
     // This handles any centering offsets or margins automatically
     const screenLeftInGame = (0 - containerRect.left) * scaleX;
-    const screenRightInGame = (window.innerWidth - containerRect.left) * scaleX;
+    const screenRightInGame = (viewport.width - containerRect.left) * scaleX;
     const screenTopInGame = (0 - containerRect.top) * scaleY;
-    const screenBottomInGame = (window.innerHeight - containerRect.top) * scaleY;
+    const screenBottomInGame = (viewport.height - containerRect.top) * scaleY;
 
     // Apply padding to keep pieces fully on screen
     const padding = 10;
@@ -791,8 +797,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const { width: w, height: h } = getViewportSize();
       // Leave some margin
       const margin = 20;
       const availableW = w - margin;
@@ -807,8 +812,12 @@ const App: React.FC = () => {
     };
 
     window.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
     handleResize();
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const isAnyDragging = pieces.some(p => p.isDragging);
